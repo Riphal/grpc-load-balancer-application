@@ -42,13 +42,13 @@ func New(message, errorType string) Error {
 	}
 }
 
-func (e Error) StatusCodeFromMap() int32 {
+func (e Error) StatusCodeFromMap() int {
 	code, ok := DefaultStatusCodeMap[e.Type]
 	if !ok {
 		code = http.StatusInternalServerError
 	}
 
-	return int32(code)
+	return code
 }
 
 func (e Error) WithValidationError(name, value, location, message string) Error {
@@ -67,4 +67,19 @@ func (e Error) IsValidation() bool {
 
 func (e Error) Error() string {
 	return fmt.Sprintf("status: %d, message: %s, type: %s", e.StatusCodeFromMap(), e.Message, e.Type)
+}
+
+func Nil() Error {
+	return Error{}
+}
+
+func (e Error) IsNil() bool {
+	if e.Message == "" && e.Type == "" {
+		return true
+	}
+	return false
+}
+
+func (e Error) IsNotNil() bool {
+	return !e.IsNil()
 }

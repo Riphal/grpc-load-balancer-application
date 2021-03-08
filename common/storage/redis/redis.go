@@ -8,7 +8,6 @@ import (
 	"github.com/Riphal/grpc-load-balancer-application/common/errors"
 	"github.com/go-redis/redis/v8"
 	"github.com/mitchellh/mapstructure"
-	pkgerrors "github.com/pkg/errors"
 )
 
 type Config struct {
@@ -19,13 +18,13 @@ type Storage struct {
 	*redis.Client
 }
 
-func New(config *Config) (*Storage, error) {
+func New(config *Config) (*Storage, errors.Error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30 * time.Second)
 	defer cancel()
 
 	options, err := redis.ParseURL(config.ConnectionURL)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("error parsing redis url", errors.InternalServerError)
 	}
 
 	options.MaxRetries = 3
@@ -35,25 +34,18 @@ func New(config *Config) (*Storage, error) {
 
 	client := redis.NewClient(options)
 	if client.Ping(ctx).Err() != nil {
-		return nil, err
+		return nil, errors.New("error connectiong to redis", errors.InternalServerError)
 	}
 
-	return &Storage{ client }, nil
+	return &Storage{ client }, errors.Nil()
 }
 
-func (s *Storage) Ping() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 30 * time.Second)
-	defer cancel()
-
-	return s.Client.Ping(ctx).Err()
-}
-
-func Marshal(data interface{}) (map[string]interface{}, error) {
+func Marshal(data interface{}) (map[string]interface{}, errors.Error) {
 	dataType := reflect.TypeOf(data)
 	value := reflect.ValueOf(data)
 
 	if dataType == nil {
-		return nil, pkgerrors.New("failed marshalling, data supplied is nil")
+		return nil, errors.New("error marshaling, data supplied is nil", errors.InternalServerError)
 	}
 
 	switch dataType.Kind() {
@@ -64,7 +56,7 @@ func Marshal(data interface{}) (map[string]interface{}, error) {
 		dataType = dataType.Elem()
 		value = value.Elem()
 	default:
-		return nil, pkgerrors.New("failed marshalling, data supplied wasn't either a struct or a struct ptr")
+		return nil, errors.New("failed marshalling, data supplied wasn't either a struct or a struct ptr", errors.InternalServerError)
 	}
 
 	redisMap := make(map[string]interface{}, dataType.NumField())
@@ -88,10 +80,10 @@ func Marshal(data interface{}) (map[string]interface{}, error) {
 
 	}
 
-	return redisMap, nil
+	return redisMap, errors.Nil()
 }
 
-func Unmarshal(input map[string]string, output interface{}) error {
+func Unmarshal(input map[string]string, output interface{}) errors.Error {
 	decoderConfig := &mapstructure.DecoderConfig{
 		TagName:          "redis",
 		Result:           output,
@@ -100,20 +92,13 @@ func Unmarshal(input map[string]string, output interface{}) error {
 
 	decoder, err := mapstructure.NewDecoder(decoderConfig)
 	if err != nil {
-		return err
+		return errors.New("error unmarshaling redis map", errors.InternalServerError)
 	}
 
-	return decoder.Decode(input)
-}
-
-func (s *Storage) HandleError(message string, err error) errors.Error {
-	var errType string
-
-	switch err {
-	case redis.Nil:
-		errType = errors.RedisNotFoundError
-	default:
-		errType = errors.RedisInternalError
+	err = decoder.Decode(input)
+	if err != nil {
+		return errors.New("error unmarshaling redis map", errors.InternalServerError)
 	}
-	return errors.New(message, errType)
+
+	return errors.Nil()
 }
