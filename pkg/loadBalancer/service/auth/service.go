@@ -9,7 +9,7 @@ import (
 
 type Service interface {
 	Register(ctx context.Context, account *account.Account) (string, errors.Error)
-	Login(ctx context.Context, account *account.Account) (string, errors.Error)
+	Login(ctx context.Context, email, password string) (string, errors.Error)
 	Logout(ctx context.Context, token string) errors.Error
 	ValidateToken(ctx context.Context, token string) errors.Error
 }

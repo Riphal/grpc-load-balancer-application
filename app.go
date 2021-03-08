@@ -18,6 +18,11 @@ type App struct {
 }
 
 func NewApp() *App {
+	err := config.LoadEnvFile("")
+	if err != nil {
+		log.Println("Failed to load env file", err)
+	}
+
 	return &App{
 		Server:	mustInitServer(),
 		DB: 	mustInitDB(),
@@ -38,7 +43,7 @@ func mustInitServer() *server.Server {
 }
 
 func mustInitDB() *postgres.DB {
-	db, err := postgres.New(config.GetEnv("DATABASE_URL", "postgres://postgres:example@localhost:5155/postgres"))
+	db, err := postgres.New(config.GetEnv("DATABASE_URL", "postgres://postgres:example@localhost:5155/postgres?sslmode=disable"))
 	if err.IsNotNil() {
 		log.Fatalln("failed to initialize postgres", err)
 	}

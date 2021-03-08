@@ -46,15 +46,12 @@ func (p *PGStorageImplementation) CreateAccount(ctx context.Context, account *ac
 	return errors.Nil()
 }
 
-func (p *PGStorageImplementation) DeleteAccount(ctx context.Context, email string) errors.Error {
-	acc := new(account.Account)
+func (p *PGStorageImplementation) DeleteAccount(ctx context.Context, id string) errors.Error {
+	acc := &account.Account{ ID: id }
 
-	_, err := p.db.ModelContext(ctx, acc).
-		Where("email = ?", email).
-		Delete()
-
+	_, err := p.db.ModelContext(ctx, acc).WherePK().Delete()
 	if err != nil {
-		return p.db.HandleError(fmt.Sprintf("couldn't delete account with email %s", email), err)
+		return p.db.HandleError(fmt.Sprintf("couldn't delete account with id %s", id), err)
 	}
 
 	return errors.Nil()

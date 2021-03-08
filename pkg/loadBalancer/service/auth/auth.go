@@ -37,12 +37,15 @@ func NewServiceImplementation(config *Config) *ServiceImplementation {
 
 func (si *ServiceImplementation) Register(ctx context.Context, account *account.Account) (string, errors.Error) {
 	// Check if account already exist
-	_, err := si.accountStorage.GetAccount(ctx, account.ID)
+	_, err := si.accountStorage.GetAccount(ctx, account.Email)
 	if err.IsNil() {
 		return "", errors.New("account already exists", errors.ConflictError)
 	} else if err.IsNotNil() && err.Type != errors.PostgresNotFoundError {
 		return "", err
 	}
+
+	// Save original password for login
+	pass := account.Password
 
 	// Hash password
 	account.Password = hashAndSalt([]byte(account.Password))
@@ -54,21 +57,21 @@ func (si *ServiceImplementation) Register(ctx context.Context, account *account.
 	}
 
 	// Call login to get valid token
-	return si.Login(ctx, account)
+	return si.Login(ctx, account.Email, pass)
 }
 
-func (si *ServiceImplementation) Login(ctx context.Context, account *account.Account) (string, errors.Error) {
-	acc, err := si.accountStorage.GetAccount(ctx, account.Email)
+func (si *ServiceImplementation) Login(ctx context.Context, email, password string) (string, errors.Error) {
+	acc, err := si.accountStorage.GetAccount(ctx, email)
 	if err.IsNotNil() {
 		return "", err
 	}
 
-	err = comparePasswords(acc.Password, []byte(account.Password))
+	err = comparePasswords(acc.Password, []byte(password))
 	if err.IsNotNil() {
 		return "", err
 	}
 
-	return si.jwtService.GenerateToken(account.Email)
+	return si.jwtService.GenerateToken(acc.ID, acc.Email)
 }
 
 func (si *ServiceImplementation) Logout(ctx context.Context, token string) errors.Error {
@@ -90,7 +93,7 @@ func (si *ServiceImplementation) ValidateToken(ctx context.Context, token string
 	if err.IsNotNil() && err.Type != errors.RedisNotFoundError {
 		return err
 	} else if exist {
-		return errors.New("this token is blacklisted", errors.UnauthorizedError)
+		return errors.New("this token is blacklisted", errors.ForbiddenError)
 	}
 
 	return errors.Nil()

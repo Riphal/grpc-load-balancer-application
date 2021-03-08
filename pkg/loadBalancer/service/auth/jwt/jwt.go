@@ -11,7 +11,8 @@ import (
 
 // jwtCustomClaims are custom claims extending default ones.
 type jwtCustomClaims struct {
-	Email  string `json:"email"`
+	ID  				string `json:"id"`
+	Email  				string `json:"email"`
 	jwt.StandardClaims
 }
 
@@ -25,9 +26,10 @@ func NewServiceImplementation() *ServiceImplementation {
 	}
 }
 
-func (si *ServiceImplementation) GenerateToken(email string) (string, errors.Error) {
+func (si *ServiceImplementation) GenerateToken(id, email string) (string, errors.Error) {
 	// Set custom and standard claims
 	claims := &jwtCustomClaims{
+		id,
 		email,
 		jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(24 * time.Hour).Unix(),

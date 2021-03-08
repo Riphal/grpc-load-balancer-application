@@ -5,6 +5,6 @@ import (
 )
 
 type Service interface {
-	GenerateToken(email string) (string, errors.Error)
+	GenerateToken(id, email string) (string, errors.Error)
 	ValidateToken(token string) errors.Error
 }

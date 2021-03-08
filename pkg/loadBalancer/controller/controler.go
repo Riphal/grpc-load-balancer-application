@@ -29,7 +29,6 @@ func (c *Controller) JSON(ctx *gin.Context, code int, response interface{}) {
 
 func (c *Controller) BindRequestBodyAndHandleError(ctx *gin.Context, requestBody interface{}) errors.Error {
 	err := ctx.BindJSON(requestBody)
-
 	if err != nil {
 		modelErr := errors.New("failed unmarshalling request body", errors.ValidationError)
 
