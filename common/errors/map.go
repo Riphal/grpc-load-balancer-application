@@ -6,6 +6,7 @@ var DefaultStatusCodeMap = map[string]int{
 	RequestTimeoutError:	http.StatusRequestTimeout,
 	BadRequestError:		http.StatusBadRequest,
 	ValidationError:		http.StatusUnprocessableEntity,
+	ConflictError:			http.StatusConflict,
 	InternalServerError:	http.StatusInternalServerError,
 	UnauthorizedError:		http.StatusUnauthorized,
 	NotFoundError:			http.StatusNotFound,
@@ -13,6 +14,8 @@ var DefaultStatusCodeMap = map[string]int{
 
 	JsonUnmarshalError:		http.StatusBadRequest,
 	JsonMarshalError:		http.StatusBadRequest,
+
+	JWTGenerateTokenError:	http.StatusBadRequest,
 
 	ProtobufUnmarshalError:	http.StatusBadRequest,
 	ProtobufMarshalError:	http.StatusBadRequest,

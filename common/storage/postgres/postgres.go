@@ -54,5 +54,5 @@ func (db *DB) HandleError(message string, err error) errors.Error {
 		errType = errors.PostgresInternalError
 	}
 
-	return errors.New("pg: "+message, errType)
+	return errors.New(fmt.Sprintf("pg: %s", message), errType)
 }

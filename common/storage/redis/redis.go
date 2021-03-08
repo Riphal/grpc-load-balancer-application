@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"time"
 
@@ -101,4 +102,16 @@ func Unmarshal(input map[string]string, output interface{}) errors.Error {
 	}
 
 	return errors.Nil()
+}
+
+func (s *Storage) HandleError(message string, err error) errors.Error {
+	var errType string
+
+	switch err {
+	case redis.Nil:
+		errType = errors.RedisNotFoundError
+	default:
+		errType = errors.RedisInternalError
+	}
+	return errors.New(fmt.Sprintf("redis: %s", message), errType)
 }

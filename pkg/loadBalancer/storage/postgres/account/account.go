@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/Riphal/grpc-load-balancer-application/common/errors"
-	"github.com/Riphal/grpc-load-balancer-application/common/model/account"
 	"github.com/Riphal/grpc-load-balancer-application/common/storage"
 	"github.com/Riphal/grpc-load-balancer-application/common/storage/postgres"
+	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/model/account"
 )
 
 type PGStorageImplementation struct {
@@ -22,19 +22,22 @@ func NewPGStorageImplementation(db *postgres.DB) *PGStorageImplementation {
 	}
 }
 
-func (p *PGStorageImplementation) GetAccount(ctx context.Context, id string) (*account.Account, errors.Error) {
-	acc := &account.Account{ ID: id }
+func (p *PGStorageImplementation) GetAccount(ctx context.Context, email string) (*account.Account, errors.Error) {
+	acc := new(account.Account)
 
-	err := p.db.Model(acc).WherePK().Context(ctx).Select()
+	err := p.db.ModelContext(ctx, acc).
+		Where("email = ?", email).
+		Select()
+
 	if err != nil {
-		return nil, p.db.HandleError(fmt.Sprintf("couldn't get accounts with id %s", id), err)
+		return nil, p.db.HandleError(fmt.Sprintf("couldn't get account with email %s", email), err)
 	}
 
 	return acc, errors.Nil()
 }
 
 func (p *PGStorageImplementation) CreateAccount(ctx context.Context, account *account.Account) errors.Error {
-	_, err := p.db.Model(account).Context(ctx).Insert()
+	_, err := p.db.ModelContext(ctx, account).Insert()
 
 	if err != nil {
 		return p.db.HandleError("couldn't insert account", err)
@@ -43,12 +46,15 @@ func (p *PGStorageImplementation) CreateAccount(ctx context.Context, account *ac
 	return errors.Nil()
 }
 
-func (p *PGStorageImplementation) DeleteAccount(ctx context.Context, id string) errors.Error {
-	acc := &account.Account{ ID: id }
+func (p *PGStorageImplementation) DeleteAccount(ctx context.Context, email string) errors.Error {
+	acc := new(account.Account)
 
-	_, err := p.db.Model(acc).WherePK().Delete()
+	_, err := p.db.ModelContext(ctx, acc).
+		Where("email = ?", email).
+		Delete()
+
 	if err != nil {
-		return p.db.HandleError(fmt.Sprintf("couldn't delete accounts with id %s", id), err)
+		return p.db.HandleError(fmt.Sprintf("couldn't delete account with email %s", email), err)
 	}
 
 	return errors.Nil()

@@ -2,8 +2,9 @@ package storage
 
 import (
 	"context"
+
 	"github.com/Riphal/grpc-load-balancer-application/common/errors"
-	"github.com/Riphal/grpc-load-balancer-application/common/model/account"
+	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/model/account"
 )
 
 type Account interface {

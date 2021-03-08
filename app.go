@@ -19,13 +19,13 @@ type App struct {
 
 func NewApp() *App {
 	return &App{
-		Server:	initServer(),
-		DB: 	initDB(),
-		Redis: 	initRedis(),
+		Server:	mustInitServer(),
+		DB: 	mustInitDB(),
+		Redis: 	mustInitRedis(),
 	}
 }
 
-func initServer() *server.Server {
+func mustInitServer() *server.Server {
 	r := router.New()
 	port := ":" + config.GetEnv("PORT", "3001")
 
@@ -37,7 +37,7 @@ func initServer() *server.Server {
 	return server.New(serverConfig)
 }
 
-func initDB() *postgres.DB {
+func mustInitDB() *postgres.DB {
 	db, err := postgres.New(config.GetEnv("DATABASE_URL", "postgres://postgres:example@localhost:5155/postgres"))
 	if err.IsNotNil() {
 		log.Fatalln("failed to initialize postgres", err)
@@ -48,7 +48,7 @@ func initDB() *postgres.DB {
 	return db
 }
 
-func initRedis() *redis.Storage {
+func mustInitRedis() *redis.Storage {
 	redisConfig := &redis.Config{
 		ConnectionURL: config.GetEnv("REGISTRY_URL", "redis://localhost:6300"),
 	}

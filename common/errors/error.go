@@ -9,6 +9,7 @@ const (
 	RequestTimeoutError		string = "RequestTimeoutError"
 	BadRequestError			string = "BadRequestError"
 	ValidationError			string = "ValidationError"
+	ConflictError			string = "ConflictError"
 	InternalServerError		string = "InternalServerError"
 	NotFoundError			string = "NotFoundError"
 	UnauthorizedError		string = "UnauthorizedError"
@@ -16,6 +17,8 @@ const (
 
 	JsonUnmarshalError		string = "JsonUnmarshalError"
 	JsonMarshalError		string = "JsonMarshalError"
+
+	JWTGenerateTokenError	string = "JWTGenerateTokenError"
 
 	ProtobufUnmarshalError	string = "ProtobufUnmarshalError"
 	ProtobufMarshalError	string = "ProtobufMarshalError"
@@ -77,6 +80,7 @@ func (e Error) IsNil() bool {
 	if e.Message == "" && e.Type == "" {
 		return true
 	}
+
 	return false
 }
 
