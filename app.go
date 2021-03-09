@@ -6,13 +6,9 @@ import (
 	"github.com/Riphal/grpc-load-balancer-application/common/config"
 	"github.com/Riphal/grpc-load-balancer-application/common/storage/postgres"
 	"github.com/Riphal/grpc-load-balancer-application/common/storage/redis"
-	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/server"
-	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/server/router"
 )
 
 type App struct {
-	Server	*server.Server
-
 	DB 		*postgres.DB
 	Redis 	*redis.Storage
 }
@@ -24,22 +20,9 @@ func NewApp() *App {
 	}
 
 	return &App{
-		Server:	mustInitServer(),
 		DB: 	mustInitDB(),
 		Redis: 	mustInitRedis(),
 	}
-}
-
-func mustInitServer() *server.Server {
-	r := router.New()
-	port := ":" + config.GetEnv("PORT", "3001")
-
-	serverConfig := &server.Config{
-		Address: port,
-		Router:  r,
-	}
-
-	return server.New(serverConfig)
 }
 
 func mustInitDB() *postgres.DB {

@@ -21,7 +21,7 @@ func NewRedisImplementation(redis *redis.Storage) *RedisImplementation {
 }
 
 func (rdb *RedisImplementation) IsBlacklisted(ctx context.Context, token string) (bool, errors.Error) {
-	key := rdb.blacklistedKey(token)
+	key := blacklistedKey(token)
 
 	_, err := rdb.redis.Get(ctx, key).Result()
 	if err != nil {
@@ -32,7 +32,7 @@ func (rdb *RedisImplementation) IsBlacklisted(ctx context.Context, token string)
 }
 
 func (rdb *RedisImplementation) SetBlacklistToken(ctx context.Context, token string) errors.Error {
-	key := rdb.blacklistedKey(token)
+	key := blacklistedKey(token)
 
 	err := rdb.redis.Set(ctx, key, '1', 24 * time.Hour).Err()
 	if err != nil {
@@ -42,6 +42,6 @@ func (rdb *RedisImplementation) SetBlacklistToken(ctx context.Context, token str
 	return errors.Nil()
 }
 
-func (rdb *RedisImplementation) blacklistedKey(token string) string {
+func blacklistedKey(token string) string {
 	return fmt.Sprintf("blacklisted:%s", token)
 }
