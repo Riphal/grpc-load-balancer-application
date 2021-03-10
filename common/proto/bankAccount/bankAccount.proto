@@ -1,6 +1,5 @@
 syntax = "proto3";
 
-import "google/protobuf/empty.proto";
 package bankAccount;
 
 option go_package = "./bankAccount";
@@ -8,6 +7,10 @@ option go_package = "./bankAccount";
 message Error {
   string message = 1;
   string type = 2;
+}
+
+message BankAccountsRequest {
+  string account_id = 1;
 }
 
 message BankAccountsReply {
@@ -23,7 +26,7 @@ message BankAccountRequest {
 message BankAccountReply {
   string id = 1;
   string name = 2;
-  string balance = 3;
+  float balance = 3;
 
   Error error = 4;
 }
@@ -34,7 +37,7 @@ message CreateBankAccountRequest {
 }
 
 service BankAccountService {
-  rpc GetBankAccounts (google.protobuf.Empty) returns (BankAccountsReply) {}
+  rpc GetBankAccounts (BankAccountsRequest) returns (BankAccountsReply) {}
   rpc GetBankAccount (BankAccountRequest) returns (BankAccountReply) {}
   rpc CreateBankAccount (CreateBankAccountRequest) returns (Error) {}
   rpc DeleteBankAccount (BankAccountRequest) returns (Error) {}

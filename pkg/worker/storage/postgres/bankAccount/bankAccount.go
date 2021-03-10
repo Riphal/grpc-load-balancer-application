@@ -3,11 +3,11 @@ package bankAccount
 import (
 	"context"
 	"fmt"
-
 	"github.com/Riphal/grpc-load-balancer-application/common/errors"
 	"github.com/Riphal/grpc-load-balancer-application/common/model/bankAccount"
 	"github.com/Riphal/grpc-load-balancer-application/common/storage/postgres"
 	"github.com/Riphal/grpc-load-balancer-application/pkg/worker/storage"
+	"log"
 )
 
 type PGStorageImplementation struct {
@@ -22,10 +22,35 @@ func NewPGStorageImplementation(db *postgres.DB) *PGStorageImplementation {
 	}
 }
 
-func (p *PGStorageImplementation) GetBankAccount(ctx context.Context, id string) (*bankAccount.BankAccount, errors.Error) {
-	bankAcc := &bankAccount.BankAccount{ ID: id }
+func (p *PGStorageImplementation) GetBankAccounts(ctx context.Context, accountID string) ([]*bankAccount.BankAccount, errors.Error) {
+	var bankAccounts []*bankAccount.BankAccount
 
-	err := p.db.ModelContext(ctx, bankAcc).WherePK().Select()
+	err := p.db.ModelContext(ctx, &bankAccounts).
+		Where("account_id = ?", accountID).
+		Select()
+
+	if err != nil {
+		log.Println(err)
+		return nil, p.db.HandleError(fmt.Sprintf("couldn't get bank accounts with account id %s", accountID), err)
+	}
+
+	return bankAccounts, errors.Nil()
+}
+
+func (p *PGStorageImplementation) GetBankAccount(ctx context.Context, id string) (*bankAccount.BankAccountBalance, errors.Error) {
+	bankAcc := new(bankAccount.BankAccountBalance)
+
+	_, err := p.db.QueryContext(ctx, bankAcc, `
+		SELECT
+			ba.id AS id,
+			ba.name AS name,
+			SUM(e.amount) AS balance
+		FROM bank_accounts ba
+		JOIN expenses e on ba.id = e.bank_account_id
+		WHERE ba.id = ?
+		GROUP BY ba.id, ba.name;
+	`, id)
+
 	if err != nil {
 		return nil, p.db.HandleError(fmt.Sprintf("couldn't get bank account with id %s", id), err)
 	}
@@ -37,6 +62,17 @@ func (p *PGStorageImplementation) CreateBankAccount(ctx context.Context, bankAcc
 	_, err := p.db.ModelContext(ctx, bankAccount).Insert()
 	if err != nil {
 		return p.db.HandleError("couldn't insert bank account", err)
+	}
+
+	return errors.Nil()
+}
+
+func (p *PGStorageImplementation) DeleteBankAccount(ctx context.Context, id string) errors.Error {
+	bankAcc := &bankAccount.BankAccount{ ID: id }
+
+	_, err := p.db.ModelContext(ctx, bankAcc).WherePK().Delete()
+	if err != nil {
+		return p.db.HandleError(fmt.Sprintf("couldn't delete bank account with id %s", id), err)
 	}
 
 	return errors.Nil()

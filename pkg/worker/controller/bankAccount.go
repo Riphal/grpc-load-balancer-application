@@ -4,29 +4,26 @@ import (
 	"context"
 	bankAccountProto "github.com/Riphal/grpc-load-balancer-application/common/proto/bankAccount"
 	bankAccountService "github.com/Riphal/grpc-load-balancer-application/pkg/worker/service/bankAccount"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type BankAccountController struct {
 	*Controller
-	GRPCServer		*grpc.Server
 	bankAccountService 	bankAccountService.Service
 }
 
 func NewBankAccountController(config *Config, bankAccountService bankAccountService.Service) *BankAccountController {
 	return &BankAccountController{
-		Controller:		NewController(config),
+		Controller:			NewController(config),
 		bankAccountService:	bankAccountService,
 	}
 }
 
-func (bac *BankAccountController) GetBankAccounts(ctx context.Context, empty *emptypb.Empty) (*bankAccountProto.BankAccountsReply, error) {
-	panic("implement me")
+func (bac *BankAccountController) GetBankAccounts(ctx context.Context, request *bankAccountProto.BankAccountsRequest) (*bankAccountProto.BankAccountsReply, error) {
+	return bac.bankAccountService.GetBankAccounts(ctx, request.AccountId), nil
 }
 
 func (bac *BankAccountController) GetBankAccount(ctx context.Context, request *bankAccountProto.BankAccountRequest) (*bankAccountProto.BankAccountReply, error) {
-	panic("implement me")
+	return bac.bankAccountService.GetBankAccount(ctx, request.Id), nil
 }
 
 func (bac *BankAccountController) CreateBankAccount(ctx context.Context, request *bankAccountProto.CreateBankAccountRequest) (*bankAccountProto.Error, error) {
@@ -36,5 +33,5 @@ func (bac *BankAccountController) CreateBankAccount(ctx context.Context, request
 }
 
 func (bac *BankAccountController) DeleteBankAccount(ctx context.Context, request *bankAccountProto.BankAccountRequest) (*bankAccountProto.Error, error) {
-	panic("implement me")
+	return bac.bankAccountService.DeleteBankAccount(ctx, request.Id), nil
 }

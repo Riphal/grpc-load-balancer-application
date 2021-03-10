@@ -11,7 +11,6 @@ type Account interface {
 	GetAccount(ctx context.Context, id string) (*account.Account, errors.Error)
 	GetAccountWithEmail(ctx context.Context, email string) (*account.Account, errors.Error)
 	CreateAccount(ctx context.Context, account *account.Account) errors.Error
-	DeleteAccount(ctx context.Context, id string) errors.Error
 }
 
 type Auth interface {

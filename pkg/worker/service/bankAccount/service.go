@@ -8,8 +8,8 @@ import (
 )
 
 type Service interface {
-	//GetBankAccounts(ctx context.Context) *bankAccountProto.BankAccountsReply
-	//GetBankAccount(ctx context.Context, id string) *bankAccountProto.BankAccountReply
+	GetBankAccounts(ctx context.Context, accountID string) *bankAccountProto.BankAccountsReply
+	GetBankAccount(ctx context.Context, id string) *bankAccountProto.BankAccountReply
 	CreateBankAccount(ctx context.Context, bankAccount *bankAccount.BankAccount) *bankAccountProto.Error
-	//DeleteBankAccount(ctx context.Context, id string) *bankAccountProto.Error
+	DeleteBankAccount(ctx context.Context, id string) *bankAccountProto.Error
 }

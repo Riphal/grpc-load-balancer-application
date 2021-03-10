@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package expense;
+
+option go_package = "./expense";
+
+message Error {
+  string message = 1;
+  string type = 2;
+}
+
+message Expense {
+  string id = 1;
+  string name = 2;
+  float amount = 3;
+}
+
+message ExpensesRequest {
+  string bank_account_id = 1;
+}
+
+message ExpensesReply {
+  repeated Expense expenses = 1;
+
+  Error error = 2;
+}
+
+message CreateExpenseRequest {
+  string bank_account_id = 1;
+  string name = 2;
+  float amount = 3;
+}
+
+message DeleteExpenseRequest {
+  string id = 1;
+}
+
+service ExpenseService {
+  rpc GetExpenses (ExpensesRequest) returns (ExpensesReply) {}
+  rpc CreateExpense (CreateExpenseRequest) returns (Error) {}
+  rpc DeleteExpense (DeleteExpenseRequest) returns (Error) {}
+}

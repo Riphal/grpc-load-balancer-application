@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/Riphal/grpc-load-balancer-application/common/errors"
-	"github.com/Riphal/grpc-load-balancer-application/common/storage"
 	"github.com/Riphal/grpc-load-balancer-application/common/storage/postgres"
 	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/model/account"
+	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/storage"
 )
 
 type PGStorageImplementation struct {
@@ -55,15 +55,3 @@ func (p *PGStorageImplementation) CreateAccount(ctx context.Context, account *ac
 
 	return errors.Nil()
 }
-
-func (p *PGStorageImplementation) DeleteAccount(ctx context.Context, id string) errors.Error {
-	acc := &account.Account{ ID: id }
-
-	_, err := p.db.ModelContext(ctx, acc).WherePK().Delete()
-	if err != nil {
-		return p.db.HandleError(fmt.Sprintf("couldn't delete account with id %s", id), err)
-	}
-
-	return errors.Nil()
-}
-
