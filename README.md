@@ -39,11 +39,6 @@ JWT_SECRET=secret
 
 ***
 
-*Compile protocol buffers*
-> make protogen
-
-***
-
 *Start load balancer application*
 > go run cmd/loadBalancer/*.go
 
