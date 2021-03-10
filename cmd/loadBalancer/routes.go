@@ -6,10 +6,11 @@ import (
 	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/middleware"
 	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/server"
 	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/service"
+	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/service/account"
 	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/service/auth"
 	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/service/auth/jwt"
 	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/service/grpc"
-	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/storage/postgres/account"
+	accountStorage "github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/storage/postgres/account"
 	authStorage "github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/storage/redis/auth"
 	loadBalancerStorage "github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/storage/redis/loadBalancer"
 )
@@ -20,10 +21,15 @@ func registerRoutes(server *server.Server, app *core.App) {
 	controllerConfig := &controller.Config{}
 
 	// Init services
+	var accountService account.Service = account.NewServiceImplementation(&account.Config{
+		Config: 		serviceConfig,
+		AccountStorage:	accountStorage.NewPGStorageImplementation(app.DB),
+	})
+
 	var authService auth.Service = auth.NewServiceImplementation(&auth.Config{
 		Config: 		serviceConfig,
 		AuthStorage: 	authStorage.NewRedisImplementation(app.Redis),
-		AccountStorage:	account.NewPGStorageImplementation(app.DB),
+		AccountStorage:	accountStorage.NewPGStorageImplementation(app.DB),
 		JwtService: 	jwt.NewServiceImplementation(),
 	})
 
@@ -34,6 +40,7 @@ func registerRoutes(server *server.Server, app *core.App) {
 
 
 	// Init controllers
+	accountController := controller.NewAccountController(controllerConfig, accountService)
 	authController := controller.NewAuthController(controllerConfig, authService)
 	grpcController := controller.NewGRPCController(controllerConfig, grpcService)
 
@@ -46,25 +53,19 @@ func registerRoutes(server *server.Server, app *core.App) {
 	api.POST("/login", authController.Login)
 	api.POST("/logout", middleware.AuthorizeJWT(authService), authController.Logout)
 
-
 	// Account routes
 	accountRouter := api.Group("/account", middleware.AuthorizeJWT(authService))
-
-	accountRouter.GET("/", grpcController.GetAccount)
-
+	accountRouter.GET("/", accountController.GetAccount)
 
 	// Bank accounts routes
 	bankAccountsRouter := accountRouter.Group("/bank-accounts")
-
 	bankAccountsRouter.GET("/", grpcController.GetBankAccounts)
 	bankAccountsRouter.GET("/:bank_account_id", grpcController.GetBankAccount)
 	bankAccountsRouter.POST("/", grpcController.CreateBankAccount)
 	bankAccountsRouter.DELETE("/:bank_account_id", grpcController.DeleteBankAccount)
 
-
 	// Bank expenses routes
-	expensesRouter := bankAccountsRouter.Group("/expenses")
-
+	expensesRouter := bankAccountsRouter.Group("/:bank_account_id/expenses")
 	expensesRouter.GET("/", grpcController.GetExpenses)
 	expensesRouter.POST("/", grpcController.CreateExpense)
 	expensesRouter.DELETE("/:expense_id", grpcController.DeleteExpense)

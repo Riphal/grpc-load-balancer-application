@@ -7,6 +7,11 @@ import (
 	"os"
 
 	core "github.com/Riphal/grpc-load-balancer-application"
+	bankAccountProto "github.com/Riphal/grpc-load-balancer-application/common/proto/bankAccount"
+	"github.com/Riphal/grpc-load-balancer-application/pkg/worker/controller"
+	"github.com/Riphal/grpc-load-balancer-application/pkg/worker/service"
+	"github.com/Riphal/grpc-load-balancer-application/pkg/worker/service/bankAccount"
+	bankAccountStorage "github.com/Riphal/grpc-load-balancer-application/pkg/worker/storage/postgres/bankAccount"
 	"google.golang.org/grpc"
 )
 
@@ -14,13 +19,28 @@ func main() {
 	app := core.NewApp()
 	listener, grpcServer := mustInitGRPC()
 
+	serviceConfig := &service.Config{}
+	controllerConfig := &controller.Config{}
+
+
+	// Init Services
+	var bankAccountService bankAccount.Service = bankAccount.NewServiceImplementation(&bankAccount.Config{
+		Config: 			serviceConfig,
+		BankAccountStorage:	bankAccountStorage.NewPGStorageImplementation(app.DB),
+	})
+
+
+	// Init controllers
+	bankAccountController := controller.NewBankAccountController(controllerConfig, bankAccountService)
+
+
 	// register services to gRPC server
-	_ = app
+	bankAccountProto.RegisterBankAccountServiceServer(grpcServer, bankAccountController)
+
 
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("faild to serve gRPC server over %v: %v", listener.Addr(), err)
 	}
-	log.Println(fmt.Sprintf("🚀 gRPC listen on %v", listener.Addr()))
 }
 
 func mustInitGRPC () (net.Listener, *grpc.Server) {
@@ -32,6 +52,8 @@ func mustInitGRPC () (net.Listener, *grpc.Server) {
 	}
 
 	grpcServer := grpc.NewServer()
+
+	log.Println(fmt.Sprintf("🚀 worker listen on %v", listener.Addr()))
 
 	return listener, grpcServer
 }

@@ -11,7 +11,7 @@ func AuthorizeJWT(authService auth.Service) gin.HandlerFunc {
 		authHeader := ctx.GetHeader("Authorization")
 		token := authHeader[len("JWT "):]
 
-		err := authService.ValidateToken(ctx, token)
+		claims, err := authService.ValidateToken(ctx, token)
 		if err.IsNotNil() {
 			ctx.AbortWithStatusJSON(err.StatusCodeFromMap(), gin.H{
 				"status": "fail",
@@ -20,6 +20,13 @@ func AuthorizeJWT(authService auth.Service) gin.HandlerFunc {
 					"type":    err.Type,
 				},
 			})
+
+			return
 		}
+
+		ctx.Set("id", claims.ID)
+		ctx.Set("email", claims.Email)
+
+		ctx.Next()
 	}
 }

@@ -22,7 +22,18 @@ func NewPGStorageImplementation(db *postgres.DB) *PGStorageImplementation {
 	}
 }
 
-func (p *PGStorageImplementation) GetAccount(ctx context.Context, email string) (*account.Account, errors.Error) {
+func (p *PGStorageImplementation) GetAccount(ctx context.Context, id string) (*account.Account, errors.Error) {
+	acc := &account.Account{ ID: id }
+
+	err := p.db.ModelContext(ctx, acc).WherePK().Select()
+	if err != nil {
+		return nil, p.db.HandleError(fmt.Sprintf("couldn't get account with id %s", id), err)
+	}
+
+	return acc, errors.Nil()
+}
+
+func (p *PGStorageImplementation) GetAccountWithEmail(ctx context.Context, email string) (*account.Account, errors.Error) {
 	acc := new(account.Account)
 
 	err := p.db.ModelContext(ctx, acc).
@@ -38,7 +49,6 @@ func (p *PGStorageImplementation) GetAccount(ctx context.Context, email string) 
 
 func (p *PGStorageImplementation) CreateAccount(ctx context.Context, account *account.Account) errors.Error {
 	_, err := p.db.ModelContext(ctx, account).Insert()
-
 	if err != nil {
 		return p.db.HandleError("couldn't insert account", err)
 	}

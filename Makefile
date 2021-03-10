@@ -7,5 +7,9 @@ migratedown:
 formatdb:
 	make migratedown && make migrateup
 
+LIST = bankAccount
 protogen:
-	protoc -I=./common/proto/ --go_out=plugins=grpc:common/proto ./common/proto/chat/chat.proto
+	for t in ${LIST}; do \
+  		rm ./common/proto/"$$t"/"$$t".pb.go; \
+  		protoc -I=./common/proto/ --go_out=plugins=grpc:common/proto ./common/proto/"$$t"/"$$t".proto; \
+  	done

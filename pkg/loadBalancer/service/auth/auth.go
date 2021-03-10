@@ -2,27 +2,28 @@ package auth
 
 import (
 	"context"
-	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/service/auth/jwt"
-	"golang.org/x/crypto/bcrypt"
 	"log"
 
 	"github.com/Riphal/grpc-load-balancer-application/common/errors"
 	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/model/account"
+	jwtModel "github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/model/jwt"
 	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/service"
-	lbstorage "github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/storage"
+	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/service/auth/jwt"
+	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/storage"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Config struct {
 	*service.Config
-	AuthStorage 	lbstorage.Auth
-	AccountStorage 	lbstorage.Account
+	AuthStorage 	storage.Auth
+	AccountStorage 	storage.Account
 	JwtService		jwt.Service
 }
 
 type ServiceImplementation struct {
 	*service.Service
-	authStorage 	lbstorage.Auth
-	accountStorage 	lbstorage.Account
+	authStorage 	storage.Auth
+	accountStorage 	storage.Account
 	jwtService		jwt.Service
 }
 
@@ -36,10 +37,10 @@ func NewServiceImplementation(config *Config) *ServiceImplementation {
 }
 
 func (si *ServiceImplementation) Register(ctx context.Context, account *account.Account) (string, errors.Error) {
-	// Check if account already exist
-	_, err := si.accountStorage.GetAccount(ctx, account.Email)
+	// Check if bankAccount already exist
+	_, err := si.accountStorage.GetAccountWithEmail(ctx, account.Email)
 	if err.IsNil() {
-		return "", errors.New("account already exists", errors.ConflictError)
+		return "", errors.New("bankAccount already exists", errors.ConflictError)
 	} else if err.IsNotNil() && err.Type != errors.PostgresNotFoundError {
 		return "", err
 	}
@@ -50,7 +51,7 @@ func (si *ServiceImplementation) Register(ctx context.Context, account *account.
 	// Hash password
 	account.Password = hashAndSalt([]byte(account.Password))
 
-	// Create account
+	// Create bankAccount
 	err = si.accountStorage.CreateAccount(ctx, account)
 	if err.IsNotNil() {
 		return "", err
@@ -61,7 +62,7 @@ func (si *ServiceImplementation) Register(ctx context.Context, account *account.
 }
 
 func (si *ServiceImplementation) Login(ctx context.Context, email, password string) (string, errors.Error) {
-	acc, err := si.accountStorage.GetAccount(ctx, email)
+	acc, err := si.accountStorage.GetAccountWithEmail(ctx, email)
 	if err.IsNotNil() {
 		return "", err
 	}
@@ -83,20 +84,20 @@ func (si *ServiceImplementation) Logout(ctx context.Context, token string) error
 	return errors.Nil()
 }
 
-func (si *ServiceImplementation) ValidateToken(ctx context.Context, token string) errors.Error {
-	err := si.jwtService.ValidateToken(token)
+func (si *ServiceImplementation) ValidateToken(ctx context.Context, token string) (*jwtModel.Claims, errors.Error) {
+	claims, err := si.jwtService.ValidateToken(token)
 	if err.IsNotNil() {
-		return err
+		return nil, err
 	}
 
 	exist, err := si.authStorage.IsBlacklisted(ctx, token)
 	if err.IsNotNil() && err.Type != errors.RedisNotFoundError {
-		return err
+		return nil, err
 	} else if exist {
-		return errors.New("this token is blacklisted", errors.ForbiddenError)
+		return nil, errors.New("this token is blacklisted", errors.ForbiddenError)
 	}
 
-	return errors.Nil()
+	return claims, errors.Nil()
 }
 
 func hashAndSalt(pwd []byte) string {
