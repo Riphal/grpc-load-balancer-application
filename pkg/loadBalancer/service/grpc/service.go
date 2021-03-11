@@ -12,12 +12,13 @@ import (
 type Service interface {
 	// Bank accounts service
 	GetBankAccounts(ctx context.Context, accountID string) ([]response.BankAccountResponse, errors.Error)
-	GetBankAccount(ctx context.Context, id string) (*response.BankAccountResponse, errors.Error)
+	GetBankAccount(ctx context.Context, id string) (*bankAccount.BankAccountBalance, errors.Error)
 	CreateBankAccount(ctx context.Context, bankAccount *bankAccount.BankAccount) errors.Error
 	DeleteBankAccount(ctx context.Context, id string) errors.Error
 
 	// Bank account expenses
 	GetExpenses(ctx context.Context, bankAccountID string) ([]expense.Expense, errors.Error)
+	GetExpense(ctx context.Context, id string) (*expense.Expense, errors.Error)
 	CreateExpense(ctx context.Context, expense *expense.Expense) errors.Error
 	DeleteExpense(ctx context.Context, id string) errors.Error
 }

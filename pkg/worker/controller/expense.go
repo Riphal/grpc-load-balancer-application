@@ -22,6 +22,10 @@ func (ec ExpenseController) GetExpenses(ctx context.Context, request *expensePro
 	return ec.expenseService.GetExpenses(ctx, request.BankAccountId), nil
 }
 
+func (ec ExpenseController) GetExpense(ctx context.Context, request *expenseProto.ExpenseRequest) (*expenseProto.ExpenseReply, error) {
+	return ec.expenseService.GetExpense(ctx, request.Id), nil
+}
+
 func (ec ExpenseController) CreateExpense(ctx context.Context, request *expenseProto.CreateExpenseRequest) (*expenseProto.Error, error) {
 	exp := expenseProto.CreateExpenseRequestToModel(request)
 

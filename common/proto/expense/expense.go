@@ -20,6 +20,31 @@ func ErrorToModel(e *Error) errors.Error {
 	}
 }
 
+func GetExpenseRequestToProto(id string) *ExpenseRequest {
+	return &ExpenseRequest{
+		Id: id,
+	}
+}
+
+func GetExpenseReplyToProto(exp *expense.Expense, e errors.Error) *ExpenseReply {
+	return &ExpenseReply{
+		Id: exp.ID,
+		BankAccountId: exp.BankAccountID,
+		Name: exp.Name,
+		Amount: exp.Amount,
+		Error: ErrorToProto(e),
+	}
+}
+
+func GetExpenseReplyToModel(exp *ExpenseReply) (*expense.Expense, errors.Error) {
+	return &expense.Expense{
+		ID: exp.Id,
+		BankAccountID: exp.BankAccountId,
+		Name: exp.Name,
+		Amount: exp.Amount,
+	}, ErrorToModel(exp.Error)
+}
+
 func GetExpensesRequestToProto(bankAccountID string) *ExpensesRequest {
 	return &ExpensesRequest{
 		BankAccountId: bankAccountID,
@@ -27,10 +52,10 @@ func GetExpensesRequestToProto(bankAccountID string) *ExpensesRequest {
 }
 
 func GetExpensesReplyToProto(expenses []*expense.Expense, e errors.Error) *ExpensesReply {
-	var expensesProto []*Expense
+	var expensesProto []*ExpenseReply
 
 	for _, exp := range expenses {
-		expensesProto = append(expensesProto, &Expense{
+		expensesProto = append(expensesProto, &ExpenseReply{
 			Id:   	exp.ID,
 			Name: 	exp.Name,
 			Amount: exp.Amount,

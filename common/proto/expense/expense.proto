@@ -9,10 +9,17 @@ message Error {
   string type = 2;
 }
 
-message Expense {
+message ExpenseRequest {
   string id = 1;
-  string name = 2;
-  float amount = 3;
+}
+
+message ExpenseReply {
+  string id = 1;
+  string bank_account_id = 2;
+  string name = 3;
+  float amount = 4;
+
+  Error error = 5;
 }
 
 message ExpensesRequest {
@@ -20,7 +27,7 @@ message ExpensesRequest {
 }
 
 message ExpensesReply {
-  repeated Expense expenses = 1;
+  repeated ExpenseReply expenses = 1;
 
   Error error = 2;
 }
@@ -37,6 +44,7 @@ message DeleteExpenseRequest {
 
 service ExpenseService {
   rpc GetExpenses (ExpensesRequest) returns (ExpensesReply) {}
+  rpc GetExpense (ExpenseRequest) returns (ExpenseReply) {}
   rpc CreateExpense (CreateExpenseRequest) returns (Error) {}
   rpc DeleteExpense (DeleteExpenseRequest) returns (Error) {}
 }

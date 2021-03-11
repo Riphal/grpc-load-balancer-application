@@ -16,6 +16,7 @@ type BankAccount interface {
 
 type Expense interface {
 	GetExpenses(ctx context.Context, bankAccountID string) ([]*expense.Expense, errors.Error)
+	GetExpense(ctx context.Context, id string) (*expense.Expense, errors.Error)
 	CreateExpense(ctx context.Context, expense *expense.Expense) errors.Error
 	DeleteExpense(ctx context.Context, id string) errors.Error
 }

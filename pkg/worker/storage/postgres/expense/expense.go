@@ -29,10 +29,21 @@ func (p PGStorageImplementation) GetExpenses(ctx context.Context, bankAccountID 
 		Select()
 
 	if err != nil {
-		return nil, p.db.HandleError(fmt.Sprintf("couldn't get expeness with bank account id %s", bankAccountID), err)
+		return nil, p.db.HandleError(fmt.Sprintf("couldn't get expenses with bank account id %s", bankAccountID), err)
 	}
 
 	return expenses, errors.Nil()
+}
+
+func (p PGStorageImplementation) GetExpense(ctx context.Context, id string) (*expense.Expense, errors.Error) {
+	exp := &expense.Expense{ ID: id }
+
+	err := p.db.ModelContext(ctx, exp).WherePK().Select()
+	if err != nil {
+		return nil, p.db.HandleError(fmt.Sprintf("couldn't get expenese with id %s", id), err)
+	}
+
+	return exp, errors.Nil()
 }
 
 func (p PGStorageImplementation) CreateExpense(ctx context.Context, expense *expense.Expense) errors.Error {

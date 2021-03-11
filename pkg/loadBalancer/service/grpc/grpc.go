@@ -2,8 +2,6 @@ package grpc
 
 import (
 	"context"
-	"log"
-
 	"github.com/Riphal/grpc-load-balancer-application/common/errors"
 	"github.com/Riphal/grpc-load-balancer-application/common/model/bankAccount"
 	"github.com/Riphal/grpc-load-balancer-application/common/model/expense"
@@ -11,56 +9,36 @@ import (
 	expenseProto "github.com/Riphal/grpc-load-balancer-application/common/proto/expense"
 	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/model/response"
 	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/service"
-	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/storage"
-	"google.golang.org/grpc"
+	loadBalancerService "github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/service/loadBalancer"
 )
 
 type Config struct {
 	*service.Config
-	LoadBalancerStorage	storage.LoadBalancer
-}
-
-type GRPCClient struct {
-	BankAccountServiceClient 	bankAccountProto.BankAccountServiceClient
-	ExpenseServiceClient		expenseProto.ExpenseServiceClient
+	LoadBalancerService loadBalancerService.Service
 }
 
 type ServiceImplementation struct {
 	*service.Service
-	gRPCClient 				*GRPCClient
-	loadBalancerStorage		storage.LoadBalancer
+	loadBalancerService loadBalancerService.Service
 }
 
 func NewServiceImplementation(config *Config) *ServiceImplementation {
 	return &ServiceImplementation{
 		Service:        		service.New(config.Config),
-		gRPCClient:				mustInitGRPCClientConn(),
-		loadBalancerStorage:	config.LoadBalancerStorage,
-	}
-}
-
-
-// TO-DO: Move to load balancer service
-func mustInitGRPCClientConn() *GRPCClient {
-	conn, err := grpc.Dial(
-		":9001",
-		grpc.WithInsecure(),
-	)
-	if err != nil {
-		log.Fatalf("could't connect: %s", err)
-	}
-
-	return &GRPCClient{
-		BankAccountServiceClient: 	bankAccountProto.NewBankAccountServiceClient(conn),
-		ExpenseServiceClient:		expenseProto.NewExpenseServiceClient(conn),
+		loadBalancerService:	config.LoadBalancerService,
 	}
 }
 
 func (si *ServiceImplementation) GetBankAccounts(ctx context.Context, accountID string) ([]response.BankAccountResponse, errors.Error) {
 	bankAccountsReq := bankAccountProto.GetBankAccountsRequestToProto(accountID)
 
-	protoReply, _ := si.gRPCClient.BankAccountServiceClient.GetBankAccounts(ctx, bankAccountsReq)
-	err := bankAccountProto.ErrorToModel(protoReply.Error)
+	grpcClient, err := si.loadBalancerService.GRPCClient(ctx)
+	if err.IsNotNil() {
+		return nil, err
+	}
+
+	protoReply, _ := grpcClient.BankAccountServiceClient.GetBankAccounts(ctx, bankAccountsReq)
+	err = bankAccountProto.ErrorToModel(protoReply.Error)
 	if err.IsNotNil() {
 		return nil, err
 	}
@@ -68,11 +46,16 @@ func (si *ServiceImplementation) GetBankAccounts(ctx context.Context, accountID 
 	return bankAccountProto.GetBankAccountsReplyToModel(protoReply)
 }
 
-func (si *ServiceImplementation) GetBankAccount(ctx context.Context, id string) (*response.BankAccountResponse, errors.Error) {
+func (si *ServiceImplementation) GetBankAccount(ctx context.Context, id string) (*bankAccount.BankAccountBalance, errors.Error) {
 	bankAccReq := bankAccountProto.GetBankAccountRequestToProto(id)
 
-	protoReply, _ := si.gRPCClient.BankAccountServiceClient.GetBankAccount(ctx, bankAccReq)
-	err := bankAccountProto.ErrorToModel(protoReply.Error)
+	grpcClient, err := si.loadBalancerService.GRPCClient(ctx)
+	if err.IsNotNil() {
+		return nil, err
+	}
+
+	protoReply, _ := grpcClient.BankAccountServiceClient.GetBankAccount(ctx, bankAccReq)
+	err = bankAccountProto.ErrorToModel(protoReply.Error)
 	if err.IsNotNil() {
 		return nil, err
 	}
@@ -83,8 +66,13 @@ func (si *ServiceImplementation) GetBankAccount(ctx context.Context, id string) 
 func (si *ServiceImplementation) CreateBankAccount(ctx context.Context, bankAccount *bankAccount.BankAccount) errors.Error {
 	bankAccReq := bankAccountProto.CreateBankAccountRequestToProto(bankAccount)
 
-	protoErr, _ := si.gRPCClient.BankAccountServiceClient.CreateBankAccount(ctx, bankAccReq)
-	err := bankAccountProto.ErrorToModel(protoErr)
+	grpcClient, err := si.loadBalancerService.GRPCClient(ctx)
+	if err.IsNotNil() {
+		return err
+	}
+
+	protoErr, _ := grpcClient.BankAccountServiceClient.CreateBankAccount(ctx, bankAccReq)
+	err = bankAccountProto.ErrorToModel(protoErr)
 	if err.IsNotNil() {
 		return err
 	}
@@ -95,8 +83,13 @@ func (si *ServiceImplementation) CreateBankAccount(ctx context.Context, bankAcco
 func (si *ServiceImplementation) DeleteBankAccount(ctx context.Context, id string) errors.Error {
 	bankAccReq := bankAccountProto.GetBankAccountRequestToProto(id)
 
-	protoErr, _ := si.gRPCClient.BankAccountServiceClient.DeleteBankAccount(ctx, bankAccReq)
-	err := bankAccountProto.ErrorToModel(protoErr)
+	grpcClient, err := si.loadBalancerService.GRPCClient(ctx)
+	if err.IsNotNil() {
+		return err
+	}
+
+	protoErr, _ := grpcClient.BankAccountServiceClient.DeleteBankAccount(ctx, bankAccReq)
+	err = bankAccountProto.ErrorToModel(protoErr)
 	if err.IsNotNil() {
 		return err
 	}
@@ -108,9 +101,13 @@ func (si *ServiceImplementation) DeleteBankAccount(ctx context.Context, id strin
 func (si *ServiceImplementation) GetExpenses(ctx context.Context, bankAccountID string) ([]expense.Expense, errors.Error) {
 	expensesReq := expenseProto.GetExpensesRequestToProto(bankAccountID)
 
-	protoReply, _ := si.gRPCClient.ExpenseServiceClient.GetExpenses(ctx, expensesReq)
+	grpcClient, err := si.loadBalancerService.GRPCClient(ctx)
+	if err.IsNotNil() {
+		return nil, err
+	}
 
-	err := expenseProto.ErrorToModel(protoReply.Error)
+	protoReply, _ := grpcClient.ExpenseServiceClient.GetExpenses(ctx, expensesReq)
+	err = expenseProto.ErrorToModel(protoReply.Error)
 	if err.IsNotNil() {
 		return nil, err
 	}
@@ -118,11 +115,33 @@ func (si *ServiceImplementation) GetExpenses(ctx context.Context, bankAccountID 
 	return expenseProto.GetExpensesReplyToModel(protoReply)
 }
 
+func (si *ServiceImplementation) GetExpense(ctx context.Context, id string) (*expense.Expense, errors.Error) {
+	expenseReq := expenseProto.GetExpenseRequestToProto(id)
+
+	grpcClient, err := si.loadBalancerService.GRPCClient(ctx)
+	if err.IsNotNil() {
+		return nil, err
+	}
+
+	protoReply, _ := grpcClient.ExpenseServiceClient.GetExpense(ctx, expenseReq)
+	err = expenseProto.ErrorToModel(protoReply.Error)
+	if err.IsNotNil() {
+		return nil, err
+	}
+
+	return expenseProto.GetExpenseReplyToModel(protoReply)
+}
+
 func (si *ServiceImplementation) CreateExpense(ctx context.Context, expense *expense.Expense) errors.Error {
 	expenseReq := expenseProto.CreateExpenseRequestToProto(expense)
 
-	protoErr, _ := si.gRPCClient.ExpenseServiceClient.CreateExpense(ctx, expenseReq)
-	err := expenseProto.ErrorToModel(protoErr)
+	grpcClient, err := si.loadBalancerService.GRPCClient(ctx)
+	if err.IsNotNil() {
+		return err
+	}
+
+	protoErr, _ := grpcClient.ExpenseServiceClient.CreateExpense(ctx, expenseReq)
+	err = expenseProto.ErrorToModel(protoErr)
 	if err.IsNotNil() {
 		return err
 	}
@@ -133,8 +152,13 @@ func (si *ServiceImplementation) CreateExpense(ctx context.Context, expense *exp
 func (si *ServiceImplementation) DeleteExpense(ctx context.Context, id string) errors.Error {
 	expenseReq := expenseProto.DeleteExpenseRequestToProto(id)
 
-	protoErr, _ := si.gRPCClient.ExpenseServiceClient.DeleteExpense(ctx, expenseReq)
-	err := expenseProto.ErrorToModel(protoErr)
+	grpcClient, err := si.loadBalancerService.GRPCClient(ctx)
+	if err.IsNotNil() {
+		return err
+	}
+
+	protoErr, _ := grpcClient.ExpenseServiceClient.DeleteExpense(ctx, expenseReq)
+	err = expenseProto.ErrorToModel(protoErr)
 	if err.IsNotNil() {
 		return err
 	}

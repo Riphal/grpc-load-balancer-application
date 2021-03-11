@@ -40,7 +40,7 @@ func (si *ServiceImplementation) Register(ctx context.Context, account *account.
 	// Check if bankAccount already exist
 	_, err := si.accountStorage.GetAccountWithEmail(ctx, account.Email)
 	if err.IsNil() {
-		return "", errors.New("bankAccount already exists", errors.ConflictError)
+		return "", errors.New("account already exists", errors.ConflictError)
 	} else if err.IsNotNil() && err.Type != errors.PostgresNotFoundError {
 		return "", err
 	}

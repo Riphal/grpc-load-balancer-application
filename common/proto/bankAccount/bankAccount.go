@@ -66,15 +66,17 @@ func GetBankAccountRequestToProto(id string) *BankAccountRequest {
 func GetBankAccountReplyToProto(ba *bankAccount.BankAccountBalance, e errors.Error) *BankAccountReply {
 	return &BankAccountReply{
 		Id: 		ba.ID,
+		AccountId:  ba.AccountID,
 		Name: 		ba.Name,
 		Balance: 	ba.Balance,
 		Error:		ErrorToProto(e),
 	}
 }
 
-func GetBankAccountReplyToModel(ba *BankAccountReply) (*response.BankAccountResponse, errors.Error) {
-	return &response.BankAccountResponse{
+func GetBankAccountReplyToModel(ba *BankAccountReply) (*bankAccount.BankAccountBalance, errors.Error) {
+	return &bankAccount.BankAccountBalance{
 		ID: 		ba.Id,
+		AccountID:  ba.AccountId,
 		Name: 		ba.Name,
 		Balance: 	ba.Balance,
 	}, ErrorToModel(ba.Error)

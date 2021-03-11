@@ -10,6 +10,7 @@ import (
 	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/service/auth"
 	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/service/auth/jwt"
 	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/service/grpc"
+	"github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/service/loadBalancer"
 	accountStorage "github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/storage/postgres/account"
 	authStorage "github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/storage/redis/auth"
 	loadBalancerStorage "github.com/Riphal/grpc-load-balancer-application/pkg/loadBalancer/storage/redis/loadBalancer"
@@ -33,9 +34,14 @@ func registerRoutes(server *server.Server, app *core.App) {
 		JwtService: 	jwt.NewServiceImplementation(),
 	})
 
+	var loadBalancerService loadBalancer.Service = loadBalancer.NewServiceImplementation(&loadBalancer.Config{
+		Config: 				serviceConfig,
+		LoadBalancerStorage:	loadBalancerStorage.NewRedisImplementation(app.Redis),
+	})
+
 	var grpcService grpc.Service = grpc.NewServiceImplementation(&grpc.Config{
 		Config: 				serviceConfig,
-		LoadBalancerStorage: 	loadBalancerStorage.NewRedisImplementation(app.Redis),
+		LoadBalancerService: 	loadBalancerService,
 	})
 
 

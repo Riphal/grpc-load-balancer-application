@@ -29,14 +29,25 @@ func NewServiceImplementation(config *Config) *ServiceImplementation {
 
 
 func (si ServiceImplementation) GetExpenses(ctx context.Context, bankAccountID string) *expenseProto.ExpensesReply {
-	bankAccounts, err := si.expenseStorage.GetExpenses(ctx, bankAccountID)
+	expenses, err := si.expenseStorage.GetExpenses(ctx, bankAccountID)
 	if err.IsNotNil() {
 		return &expenseProto.ExpensesReply{
 			Error: expenseProto.ErrorToProto(err),
 		}
 	}
 
-	return expenseProto.GetExpensesReplyToProto(bankAccounts, err)
+	return expenseProto.GetExpensesReplyToProto(expenses, err)
+}
+
+func (si ServiceImplementation) GetExpense(ctx context.Context, id string) *expenseProto.ExpenseReply {
+	exp, err := si.expenseStorage.GetExpense(ctx, id)
+	if err.IsNotNil() {
+		return &expenseProto.ExpenseReply{
+			Error: expenseProto.ErrorToProto(err),
+		}
+	}
+
+	return expenseProto.GetExpenseReplyToProto(exp, err)
 }
 
 func (si ServiceImplementation) CreateExpense(ctx context.Context, expense *expense.Expense) *expenseProto.Error {

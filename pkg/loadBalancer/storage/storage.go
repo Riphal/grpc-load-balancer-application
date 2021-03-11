@@ -19,6 +19,8 @@ type Auth interface {
 }
 
 type LoadBalancer interface {
+	IncrCounter(ctx context.Context) (int64, errors.Error)
 	GetWorkers(ctx context.Context) ([]string, errors.Error)
-	AddWorker(ctx context.Context, addr string) errors.Error
+	RegisterWorker(ctx context.Context, addr string) errors.Error
+	DeRegisterWorker(ctx context.Context, addr string) errors.Error
 }

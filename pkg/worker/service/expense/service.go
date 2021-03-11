@@ -8,6 +8,7 @@ import (
 
 type Service interface {
 	GetExpenses(ctx context.Context, bankAccountID string) *expenseProto.ExpensesReply
+	GetExpense(ctx context.Context, id string) *expenseProto.ExpenseReply
 	CreateExpense(ctx context.Context, expense *expense.Expense) *expenseProto.Error
 	DeleteExpense(ctx context.Context, id string) *expenseProto.Error
 }

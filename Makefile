@@ -7,7 +7,7 @@ migratedown:
 formatdb:
 	make migratedown && make migrateup
 
-LIST = bankAccount expense
+LIST = bankAccount expense loadBalancer
 protogen:
 	for t in ${LIST}; do \
   		rm ./common/proto/"$$t"/"$$t".pb.go; \

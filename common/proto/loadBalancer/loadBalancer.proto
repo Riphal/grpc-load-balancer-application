@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+package worker;
+
+option go_package = "./loadBalancer";
+
+message Request {
+  string addr = 1;
+}
+
+service loadBalancerService {
+  rpc Register (Request) returns (google.protobuf.Empty) {}
+  rpc DeRegister (Request) returns (google.protobuf.Empty) {}
+}

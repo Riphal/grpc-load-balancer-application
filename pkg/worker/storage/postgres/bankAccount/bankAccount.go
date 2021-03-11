@@ -3,11 +3,11 @@ package bankAccount
 import (
 	"context"
 	"fmt"
+
 	"github.com/Riphal/grpc-load-balancer-application/common/errors"
 	"github.com/Riphal/grpc-load-balancer-application/common/model/bankAccount"
 	"github.com/Riphal/grpc-load-balancer-application/common/storage/postgres"
 	"github.com/Riphal/grpc-load-balancer-application/pkg/worker/storage"
-	"log"
 )
 
 type PGStorageImplementation struct {
@@ -30,7 +30,6 @@ func (p *PGStorageImplementation) GetBankAccounts(ctx context.Context, accountID
 		Select()
 
 	if err != nil {
-		log.Println(err)
 		return nil, p.db.HandleError(fmt.Sprintf("couldn't get bank accounts with account id %s", accountID), err)
 	}
 
@@ -43,16 +42,20 @@ func (p *PGStorageImplementation) GetBankAccount(ctx context.Context, id string)
 	_, err := p.db.QueryContext(ctx, bankAcc, `
 		SELECT
 			ba.id AS id,
+			ba.account_id AS account_id,
 			ba.name AS name,
 			SUM(e.amount) AS balance
 		FROM bank_accounts ba
-		JOIN expenses e on ba.id = e.bank_account_id
+		LEFT JOIN expenses e on ba.id = e.bank_account_id
 		WHERE ba.id = ?
-		GROUP BY ba.id, ba.name;
+		GROUP BY ba.id, ba.account_id, ba.name;
 	`, id)
+
 
 	if err != nil {
 		return nil, p.db.HandleError(fmt.Sprintf("couldn't get bank account with id %s", id), err)
+	} else if bankAcc.ID == "" {
+		return nil, errors.New(fmt.Sprintf("couldn't get bank account with id %s", id), errors.PostgresNotFoundError)
 	}
 
 	return bankAcc, errors.Nil()
